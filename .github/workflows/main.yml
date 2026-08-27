@@ -1,0 +1,70 @@
+name: Japan Trip Countdown
+
+on:
+  schedule:
+    # Handles both BST and GMT for Europe/Jersey.
+    - cron: "0 23 * * *"
+    - cron: "0 0 * * *"
+
+  # Lets you test it manually at any time.
+  workflow_dispatch:
+
+jobs:
+  post-countdown:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Post countdown to Discord
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          EVENT_NAME: ${{ github.event_name }}
+
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          import sys
+          import urllib.request
+          from datetime import date, datetime
+          from zoneinfo import ZoneInfo
+
+          timezone = ZoneInfo("Europe/Jersey")
+          target_date = date(2026, 11, 20)
+          now = datetime.now(timezone)
+
+          # Scheduled runs only post during the local midnight hour.
+          # Manual "Run workflow" tests can post immediately.
+          if os.environ["EVENT_NAME"] != "workflow_dispatch" and now.hour != 0:
+              print(f"Skipping: local time is {now:%Y-%m-%d %H:%M %Z}")
+              sys.exit(0)
+
+          days = (target_date - now.date()).days
+
+          # Stop after the trip date.
+          if days < 0:
+              print("Countdown complete.")
+              sys.exit(0)
+
+          message = f"{days} days until Japan Trip!"
+
+          webhook = os.environ.get("DISCORD_WEBHOOK_URL")
+          if not webhook:
+              raise RuntimeError("DISCORD_WEBHOOK_URL secret is missing.")
+
+          payload = json.dumps({"content": message}).encode("utf-8")
+
+          request = urllib.request.Request(
+              webhook,
+              data=payload,
+              headers={
+                  "Content-Type": "application/json",
+                  "User-Agent": "JapanTripCountdown/1.0"
+              },
+              method="POST"
+          )
+
+          with urllib.request.urlopen(request, timeout=20) as response:
+              print(f"Discord returned HTTP {response.status}")
+
+          print(f"Posted: {message}")
+          PY
