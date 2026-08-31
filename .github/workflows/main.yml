@@ -3,8 +3,8 @@ name: Japan Trip Countdown
 on:
   schedule:
     # Handles both BST and GMT for Europe/Jersey.
-    - cron: "0 23 * * *"
-    - cron: "0 0 * * *"
+  - cron: "7 23 * * *"
+  - cron: "7 0 * * *"
 
   # Lets you test it manually at any time.
   workflow_dispatch:
