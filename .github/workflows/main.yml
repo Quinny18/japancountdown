@@ -2,11 +2,12 @@ name: Japan Trip Countdown
 
 on:
   schedule:
-    # Handles both BST and GMT for Europe/Jersey.
-  - cron: "7 23 * * *"
-  - cron: "7 0 * * *"
+    # 00:07 every day in Jersey time.
+    # GitHub automatically handles BST/GMT.
+    - cron: "7 0 * * *"
+      timezone: "Europe/Jersey"
 
-  # Lets you test it manually at any time.
+  # Allows manual testing whenever you want.
   workflow_dispatch:
 
 jobs:
@@ -17,7 +18,6 @@ jobs:
       - name: Post countdown to Discord
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          EVENT_NAME: ${{ github.event_name }}
 
         run: |
           python - <<'PY'
@@ -30,15 +30,9 @@ jobs:
 
           timezone = ZoneInfo("Europe/Jersey")
           target_date = date(2026, 11, 20)
-          now = datetime.now(timezone)
 
-          # Scheduled runs only post during the local midnight hour.
-          # Manual "Run workflow" tests can post immediately.
-          if os.environ["EVENT_NAME"] != "workflow_dispatch" and now.hour != 0:
-              print(f"Skipping: local time is {now:%Y-%m-%d %H:%M %Z}")
-              sys.exit(0)
-
-          days = (target_date - now.date()).days
+          today = datetime.now(timezone).date()
+          days = (target_date - today).days
 
           # Stop after the trip date.
           if days < 0:
