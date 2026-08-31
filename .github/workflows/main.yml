@@ -2,12 +2,9 @@ name: Japan Trip Countdown
 
 on:
   schedule:
-    # 00:07 every day in Jersey time.
-    # GitHub automatically handles BST/GMT.
-    - cron: "7 0 * * *"
+    - cron: "37 0 * * *"
       timezone: "Europe/Jersey"
 
-  # Allows manual testing whenever you want.
   workflow_dispatch:
 
 jobs:
